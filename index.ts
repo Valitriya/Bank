@@ -1,25 +1,42 @@
-class Customer {
-    name: string
-    surname: string
-    age: number
-    gender: string
-    mobileNum: number
-    accNum: number
+import { faker } from "@faker-js/faker";
 
-    constructor(fName:string, SName:string,age:number, gender:string, mob:number, acc:number){
-        this.name = fName
-        this.surname = SName
-        this.age = age
-        this.gender = gender
-        this.mobileNum = mob
-        this.accNum = acc
-    }
+class Customer {
+	name: string;
+	surname: string;
+	age: number;
+	gender: string;
+	email: string;
+	accNum: number;
+
+	constructor(
+		fName: string,
+		sName: string,
+		age: number,
+		gender: string,
+		email: string,
+		acc: number
+	) {
+		this.name = fName;
+		this.surname = sName;
+		this.age = age;
+		this.gender = gender;
+		this.email = email;
+		this.accNum = acc;
+	}
 }
-interface BankAccount{
-    accNum: number,
-    balance: number,
+interface BankAccount {
+	accNum: number;
+	balance: number;
 }
-class Bank{
-    customer: Customer[] = []
-    account: BankAccount[] = []
+class Bank {
+	customer: Customer[] = [];
+	account: BankAccount[] = [];
+}
+let myBank = new Bank();
+
+for (let i: number = 1; i <= 3; i++) {
+	let fName = faker.person.firstName("female");
+	let sName = faker.person.lastName();
+	let email = faker.internet.email();
+	const cus = new Customer(fName, sName, 25 * i, "female", email, 999 + i);
 }
