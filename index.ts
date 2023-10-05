@@ -15,3 +15,11 @@ class Customer {
         this.accNum = acc
     }
 }
+interface BankAccount{
+    accNum: number,
+    balance: number,
+}
+class Bank{
+    customer: Customer[] = []
+    account: BankAccount[] = []
+}
