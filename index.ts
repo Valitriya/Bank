@@ -31,7 +31,12 @@ interface BankAccount {
 class Bank {
 	customer: Customer[] = [];
 	account: BankAccount[] = [];
+
+	addCustomer(obj: Customer) {
+		this.customer.push(obj);
+	}
 }
+
 let myBank = new Bank();
 
 for (let i: number = 1; i <= 3; i++) {
@@ -39,4 +44,6 @@ for (let i: number = 1; i <= 3; i++) {
 	let sName = faker.person.lastName();
 	let email = faker.internet.email();
 	const cus = new Customer(fName, sName, 25 * i, "female", email, 999 + i);
+	myBank.addCustomer(cus);
 }
+console.log(myBank);
