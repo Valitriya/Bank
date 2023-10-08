@@ -3,114 +3,153 @@ import inquirer from "inquirer";
 import chalk from "chalk";
 
 class Customer {
-  constructor(
-    public name: string,
-    public surname: string,
-    public age: number,
-    public gender: string,
-    public email: string,
-    public accNum: number
-  ) {}
+	constructor(
+		public name: string,
+		public surname: string,
+		public age: number,
+		public gender: string,
+		public email: string,
+		public accNum: number
+	) {}
 }
 
 interface BankAccount {
-  accNum: number;
-  balance: number;
+	accNum: number;
+	balance: number;
 }
 
 class Bank {
-  customer: Customer[] = [];
-  account: BankAccount[] = [];
+	customer: Customer[] = [];
+	account: BankAccount[] = [];
 
-  addCustomer(obj: Customer) {
-    this.customer.push(obj);
-  }
+	addCustomer(obj: Customer) {
+		this.customer.push(obj);
+	}
 
-  addAccountNumber(obj: BankAccount) {
-    this.account.push(obj);
-  }
+	addAccountNumber(obj: BankAccount) {
+		this.account.push(obj);
+	}
 
-  transaction(accObj: BankAccount) {
-    let newAccounts = this.account.filter((acc) => acc.accNum !== accObj.accNum);
-    this.account = [...newAccounts, accObj];
-  }
+	transaction(accObj: BankAccount) {
+		let newAccounts = this.account.filter(
+			(acc) => acc.accNum !== accObj.accNum
+		);
+		this.account = [...newAccounts, accObj];
+	}
 }
 
-const myBank = new Bank();
+let myBank = new Bank();
 
-function generateCustomerAndAccount() {
-  for (let i = 1; i <= 3; i++) {
-    const fName = faker.person.firstName("female");
-    const sName = faker.person.lastName();
-    const email = faker.internet.email();
-    const cus = new Customer(fName, sName, 25 * i, "female", email, 999 + i);
-    myBank.addCustomer(cus);
-    myBank.addAccountNumber({ accNum: cus.accNum, balance: 1000 * i });
-  }
+for (let i: number = 1; i <= 3; i++) {
+	let fName = faker.person.firstName("female");
+	let sName = faker.person.lastName();
+	let email = faker.internet.email();
+	const cus = new Customer(fName, sName, 25 * i, "female", email, 999 + i);
+	myBank.addCustomer(cus);
+	myBank.addAccountNumber({ accNum: cus.accNum, balance: 1000 * i });
 }
 
-function viewBalance(accountNum: number) {
-  const account = myBank.account.find((acc) => acc.accNum === accountNum);
-
-  if (!account) {
-    console.log(chalk.red.bold("Invalid account number"));
-  } else {
-    const name = myBank.customer.find((item) => item.accNum === account.accNum);
-    console.log(
-      `Dear ${chalk.green.italic(name?.name)} ${chalk.green.italic(
-        name?.surname
-      )} your account balance is ${chalk.bold.blueBright(`$${account.balance}`)}`
-    );
-  }
+function findAccount(accountNum: number) {
+	return myBank.account.find((acc) => acc.accNum == accountNum);
 }
 
-async function getAccountAndDisplayInfo(bank: Bank, action: string) {
-  let res = await inquirer.prompt({
-    type: "input",
-    name: "num",
-    message: "Please enter your account number: ",
-  });
+async function displayBalance(account: BankAccount | undefined) {
+	if (!account) return;
+	let name = myBank.customer.find((item) => item.accNum == account.accNum);
+	console.log(
+		`Dear ${chalk.green.italic(name?.name)} ${chalk.green.italic(
+			name?.surname
+		)} your account balance is ${chalk.bold.blueBright(`$${account.balance}`)}`
+	);
+}
 
-  let account = bank.account.find((acc) => acc.accNum === Number(res.num));
+async function handleTransaction(
+	account: BankAccount | undefined,
+	type: "withdraw" | "deposit"
+) {
+	if (!account) {
+		console.log(chalk.red.bold("Invalid account number"));
+		return;
+	}
 
-  if (!account) {
-    console.log(chalk.red.bold("Invalid account number"));
-    return;
-  }
+	let amountPrompt = await inquirer.prompt({
+		type: "input",
+		name: "usd",
+		message: `Please enter your ${
+			type === "withdraw" ? "withdrawal" : "deposit"
+		} amount: `,
+	});
 
-  let name = bank.customer.find((item) => item.accNum === account?.accNum);
-  console.log(
-    `Dear ${chalk.green.italic(name?.name)} ${chalk.green.italic(
-      name?.surname
-    )} your account balance is ${chalk.bold.blueBright(`$${account.balance}`)}`
-  );
+	let amount = parseFloat(amountPrompt.usd);
 
-  if (action === "Cash withdraw") {
-    let ans = await inquirer.prompt({
-      type: "input",
-      name: "usd",
-      message: "Please enter your amount: ",
-    });
-    let newBalance = account.balance - Number(ans.usd);
-    bank.transaction({ accNum: account.accNum, balance: newBalance });
-	console.log(newBalance);
-  }
+	if (isNaN(amount) || amount <= 0) {
+		console.log(chalk.red.bold("Invalid amount"));
+		return;
+	}
+
+	let newBalance;
+	if (type === "withdraw" && amount > account.balance) {
+		console.log(chalk.red.bold("Not enough money on balance :("));
+		return;
+	} else {
+		newBalance =
+			type === "withdraw" ? account.balance - amount : account.balance + amount;
+		myBank.transaction({
+			accNum: account.accNum,
+			balance: newBalance,
+		});
+	}
+
+	console.log(
+		chalk.green.bold(
+			`${type === "withdraw" ? "Withdrawal" : "Deposit"} successful!`
+		)
+	);
 }
 
 async function bankService(bank: Bank) {
-  let service = await inquirer.prompt({
-    type: "list",
-    name: "select",
-    message: "Please select the service",
-    choices: ["View balance", "Cash withdraw", "Cash deposit", "Cash transfer"],
-  });
+	do {
+		let service = await inquirer.prompt({
+			type: "list",
+			name: "select",
+			message: "Please select the service",
+			choices: ["View balance", "Cash withdraw", "Cash deposit", "Exit"],
+		});
 
-  if (service.select === "View balance") {
-    await getAccountAndDisplayInfo(bank, "View balance");
-  } else if (service.select === "Cash withdraw") {
-    await getAccountAndDisplayInfo(bank, "Cash withdraw");
-  }
+		if (service.select == "Exit") {
+			return;
+		}
+
+		let res = await inquirer.prompt({
+			type: "input",
+			name: "num",
+			message: "Please enter your account number: ",
+		});
+
+		let account = findAccount(parseInt(res.num, 10));
+
+		if (!account) {
+			console.log(chalk.red.bold("Invalid account number"));
+			continue;
+		}
+
+		switch (service.select) {
+			case "View balance":
+				await displayBalance(account);
+				break;
+
+			case "Cash withdraw":
+			case "Cash deposit":
+				await handleTransaction(
+					account,
+					service.select === "Cash withdraw" ? "withdraw" : "deposit"
+				);
+				break;
+
+			default:
+				break;
+		}
+	} while (true);
 }
 
-generateCustomerAndAccount();
 bankService(myBank);
