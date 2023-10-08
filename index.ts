@@ -12,10 +12,12 @@ class Customer {
     public accNum: number
   ) {}
 }
+
 interface BankAccount {
   accNum: number;
   balance: number;
 }
+
 class Bank {
   customer: Customer[] = [];
   account: BankAccount[] = [];
@@ -23,10 +25,17 @@ class Bank {
   addCustomer(obj: Customer) {
     this.customer.push(obj);
   }
+
   addAccountNumber(obj: BankAccount) {
     this.account.push(obj);
   }
+
+  transaction(accObj: BankAccount) {
+    let newAccounts = this.account.filter((acc) => acc.accNum !== accObj.accNum);
+    this.account = [...newAccounts, accObj];
+  }
 }
+
 const myBank = new Bank();
 
 function generateCustomerAndAccount() {
@@ -54,8 +63,42 @@ function viewBalance(accountNum: number) {
     );
   }
 }
+
+async function getAccountAndDisplayInfo(bank: Bank, action: string) {
+  let res = await inquirer.prompt({
+    type: "input",
+    name: "num",
+    message: "Please enter your account number: ",
+  });
+
+  let account = bank.account.find((acc) => acc.accNum === Number(res.num));
+
+  if (!account) {
+    console.log(chalk.red.bold("Invalid account number"));
+    return;
+  }
+
+  let name = bank.customer.find((item) => item.accNum === account?.accNum);
+  console.log(
+    `Dear ${chalk.green.italic(name?.name)} ${chalk.green.italic(
+      name?.surname
+    )} your account balance is ${chalk.bold.blueBright(`$${account.balance}`)}`
+  );
+
+  if (action === "Cash withdraw") {
+    let ans = await inquirer.prompt({
+      type: "input",
+      name: "usd",
+      message: "Please enter your amount: ",
+    });
+    let newBalance = account.balance - Number(ans.usd);
+    bank.transaction({ accNum: account.accNum, balance: newBalance });
+	console.log(newBalance);
+  }
+}
+
 async function bankService(bank: Bank) {
-  const service = await inquirer.prompt({
+  let service = await inquirer.prompt({
     type: "list",
     name: "select",
     message: "Please select the service",
@@ -63,19 +106,9 @@ async function bankService(bank: Bank) {
   });
 
   if (service.select === "View balance") {
-    const res = await inquirer.prompt({
-      type: "input",
-      name: "num",
-      message: "Please enter your account number: ",
-    });
-
-    const accountNum = Number(res.num);
-
-    if (!isNaN(accountNum)) {
-      viewBalance(accountNum);
-    } else {
-      console.log(chalk.red.bold("Invalid input. Please enter a valid number."));
-    }
+    await getAccountAndDisplayInfo(bank, "View balance");
+  } else if (service.select === "Cash withdraw") {
+    await getAccountAndDisplayInfo(bank, "Cash withdraw");
   }
 }
 
