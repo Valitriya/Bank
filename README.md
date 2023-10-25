@@ -18,7 +18,7 @@
 1. Клонируйте репозиторий на свой локальный компьютер:
 2. Перейдите в папку проекта:
 ```
-cd ConsoleIinteractiveBankSystem-cli
+cd ConsoleInteractiveBankSystem-cli
 ```
 3. Установите зависимости проекта:
 ```
